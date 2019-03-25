@@ -1,5 +1,12 @@
 # Classic Arcade Game Clone Project
 
+> Student Project #1 during Advanced Front-End Development Nanodegree Program at Udacity.
+
+The project consists on a game, in which you have a Player and Enemies (Bugs). The goal of the player is to reach the water, without colliding into any one of the enemies. For detailed project instructions on how I got started, check out this [guide](https://docs.google.com/document/d/1v01aScPjSWCCWQLIpFqvg3-vXLH2e8_SZQKC8jNO0Dc/pub?embedded=true).
+
+<!-- See live Project -->
+<!-- Image of Project -->
+
 ## Table of Contents
 
 - [Instructions](#instructions)
@@ -7,14 +14,15 @@
 
 ## Instructions
 
-Use this [rubric](https://review.udacity.com/#!/rubrics/15/view) for self-checking your submission.
+### Run locally
 
-Make sure the functions you write are **object-oriented** - either class functions (like `Player` and `Enemy`) or class prototype functions such as `Enemy.prototype.checkCollisions`. Also make sure that the keyword `this` is used appropriately within your class and class prototype functions to refer to the object the function is called upon.
+Clone this repository or download the ZIP file and extract the files in it. Open up the index.html file in your browser and the game will start.
 
-Your **README.md** file should be updated with instructions on both how to 1. Run and 2. Play your arcade game.
+### How to play
 
-For detailed instructions on how to get started, check out this [guide](https://docs.google.com/document/d/1v01aScPjSWCCWQLIpFqvg3-vXLH2e8_SZQKC8jNO0Dc/pub?embedded=true).
+- Move with arrow keys on keyboard.
+- Avoid bugs.
+- Get safely to water.
 
 ## Contributing
-
 This repository is the starter code for _all_ Udacity students. Therefore, we most likely will not accept pull requests.
