@@ -1,12 +1,48 @@
+var Grid = function() {
+    this.numRows =  6;
+    this.numCols =  5;
+    this.rowSize =  83;
+    this.colSize =  101;
+    this.rowImages = [
+        'images/water-block.png',   // Top row is water
+        'images/stone-block.png',   // Row 1 of 3 of stone
+        'images/stone-block.png',   // Row 2 of 3 of stone
+        'images/stone-block.png',   // Row 3 of 3 of stone
+        'images/grass-block.png',   // Row 1 of 2 of grass
+        'images/grass-block.png'    // Row 2 of 2 of grass
+    ];
+};
+
+Grid.prototype.render = function() {
+    var row, col;
+    /* Loop through the number of rows and columns we've defined above
+        * and, using the rowImages array, draw the correct image for that
+        * portion of the "grid"
+        */
+    for (row = 0; row < this.numRows; row++) {
+        for (col = 0; col < this.numCols; col++) {
+            /* The drawImage function of the canvas' context element
+                * requires 3 parameters: the image to draw, the x coordinate
+                * to start drawing and the y coordinate to start drawing.
+                * We're using our Resources helpers to refer to our images
+                * so that we get the benefits of caching these images, since
+                * we're using them over and over.
+                */
+            ctx.drawImage(Resources.get(this.rowImages[row]), col * this.colSize, row * this.rowSize);
+        }
+    }
+}
+
 // Enemies our player must avoid
-var Enemy = function() {
-    // Variables applied to each of our instances go here,
-    // we've provided one for you to get started
-    this.setRandomX();
-    this.setRandomY();
+var Enemy = function(grid) {
+    this.grid = grid;
+    this.margin = {x: 30, y: -23};
+    this.allowedRows = [1, 2, 3];
+    this.allowedInitial = [-50, -150, -250];
+    this.minSpeed = 1;
+    this.maxSpeed = 4;
+    this.setRandomPosition();
     this.setRandomSpeed();
-    // The image/sprite for our enemies, this uses
-    // a helper we've provided to easily load images
     this.sprite = 'images/enemy-bug.png';
 };
 
@@ -16,8 +52,9 @@ Enemy.prototype.update = function(dt) {
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
     // all computers.
-    if (this.x <= 500){
-        this.x += (this.speed * 100) * dt;
+    var gridWidth = this.grid.colSize * this.grid.numCols;
+    if (this.x <= gridWidth){
+        this.x += this.getDistancePerTime() * dt;
     } else {
         this.reset();
     }
@@ -28,57 +65,81 @@ Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
-Enemy.prototype.setRandomX = function() {
-    var randomX = Math.floor(Math.random() * 3);
-    var allowedX = {
-        0: -100,
-        1: -300,
-        2: -600
-    };
-    this.x = allowedX[randomX];
+Enemy.prototype.getDistancePerTime = function() {
+    return this.speed * 100;
+};
+
+Enemy.prototype.setRandomPosition = function() {
+    var randElement = function randElement(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    var randomRow = randElement(this.allowedRows);
+    var randomInitial = randElement(this.allowedInitial);
+    this.setPosition(randomRow, randomInitial);
 }
 
-Enemy.prototype.setRandomY = function() {
-    var randomY = Math.floor(Math.random() * 3);
-    var allowedY = {
-        0: 45,
-        1: 130,
-        2: 215
-    };
-    this.y = allowedY[randomY];
+Enemy.prototype.setPosition = function(row, initialPoint) {
+    this.x = initialPoint + this.margin.x;
+    this.y = this.grid.rowSize * row + this.margin.y;
 }
 
 Enemy.prototype.setRandomSpeed = function() {
-    this.speed = Math.floor(Math.random() * 3) + 2;
+    this.speed = Math.floor(Math.random() * this.maxSpeed) + this.minSpeed;
 }
 
 Enemy.prototype.reset = function() {
-    this.setRandomX();
-    this.setRandomY();
+    this.setRandomPosition();
     this.setRandomSpeed();
 }
 
+Enemy.prototype.getRow = function() {
+     return (this.y - this.margin.y) / this.grid.rowSize;
+}
+
+Enemy.prototype.getColRange = function() {
+    var xPos = (this.x - this.margin.x) / this.grid.colSize;
+    var minPos = Math.round(xPos);
+    var maxPos = Math.ceil(xPos);
+    return { min: minPos, max: maxPos }
+}
+
 Enemy.prototype.checkCollisions = function(player) {
-    if (this.y === player.y && (player.x >= this.x - 80 && player.x <= this.x + 80)) {
-        return true;
+    var playerPosition = player.getPosition();
+    var colRange = this.getColRange();
+    if (playerPosition.y === this.getRow()) {
+        return playerPosition.x === colRange.min || playerPosition.x === colRange.max;
     }
     return false;
+}
+
+Enemy.generateEnemies = function(numEnemies, grid) {
+    var arrEnemies = [];
+    for(var i = 0; i < numEnemies; i++) {
+        arrEnemies.push(new Enemy(grid))
+    }
+    return arrEnemies;
 }
 
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
-var Player = function() {
-    this.x = 200;
-    this.y = 385;
+var Player = function(grid) {
+    this.grid = grid;
     this.sprite = 'images/char-boy.png';
+    this.margin = {x: 0, y: -30};
+    this.setPosition(2, 5);
+    this.dead = false;
 }
 
 Player.prototype.update = function() {
-    if (this.y < 0) {
+    if (this.isWinner() || this.dead) {
         this.reset();
     }
 };
+
+Player.prototype.isWinner = function() {
+    return this.getPosition().y === 0;
+}
 
 Player.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
@@ -87,56 +148,60 @@ Player.prototype.render = function() {
 Player.prototype.handleInput = function(key) {
     switch(key) {
         case 'left':
-            this.setXLocation(-1);
+            this.moveX(-1);
             break;
         case 'up':
-            this.setYLocation(-1);
+            this.moveY(-1);
             break;
         case 'right':
-            this.setXLocation(1);
+            this.moveX(1);
             break;
         case 'down':
-            this.setYLocation(1);
+            this.moveY(1);
             break;
     }
 }
 
-Player.prototype.setXLocation = function(x) {
-    var maxX = 500;
-    var minX = -100;
-    x *= 100;
-    if (!(this.x + x >= maxX || this.x + x <= minX))
-        this.x += x;
+Player.prototype.moveX = function(distance) {
+    var pos = this.getPosition();
+    this.setPosition(pos.x + distance, pos.y);
 }
 
-Player.prototype.setYLocation = function(y) {
-    var maxY = 385;
-    var minY = -100;
-    y *= 85;
-    if (!(this.y + y > maxY || this.y + y < minY))
-        this.y += y;
+Player.prototype.moveY = function(distance) {
+    var pos = this.getPosition();
+    this.setPosition(pos.x, pos.y + distance);
+}
+
+Player.prototype.setPosition = function(x, y) {
+    if (this.isValidPosition(x, y)) {
+        this.x = this.grid.colSize * x + this.margin.x;
+        this.y = this.grid.rowSize * y + this.margin.y;
+    }
+}
+
+Player.prototype.getPosition = function() {
+    var x = (this.x - this.margin.x) / this.grid.colSize;
+    var y = (this.y - this.margin.y) / this.grid.rowSize;
+    return { x: x, y: y };
+}
+
+Player.prototype.isValidPosition = function(x, y) {
+    var validX = x >= 0 && x <= this.grid.numCols - 1;
+    var validY = y >= 0 && y <= this.grid.numRows - 1;
+    return validX && validY;
 }
 
 Player.prototype.reset = function() {
-    this.x = 200;
-    this.y = 385;
+    this.dead = false;
+    this.setPosition(2, 5);
 }
 
-// Now instantiate your objects.
-// Place all enemy objects in an array called allEnemies
-// Place the player object in a variable called player
-function generateEnemies(num) {
-    var arrEnemies = [];
-    for(var i = 0 ; i < num; i++) {
-        arrEnemies.push(new Enemy());
-    }
-    return arrEnemies;
-}
-var player = new Player();
-var allEnemies = generateEnemies(5);
+var grid = new Grid();
+var player = new Player(grid);
+var numOfEnemies = 6;
+var allEnemies = Enemy.generateEnemies(numOfEnemies, grid);
 
-// This listens for key presses and sends the keys to your
-// Player.handleInput() method. You don't need to modify this.
+// This listens for key presses and sends the keys to your Player.
 document.addEventListener('keyup', function(e) {
     var allowedKeys = {
         37: 'left',
