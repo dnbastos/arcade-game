@@ -37,10 +37,10 @@ Grid.prototype.render = function() {
 
 // Enemies our player must avoid
 var Enemy = function(grid) {
-    this.grid = grid;
-    this.margin = {x: 30, y: -23}; //justify enemy image on grid
-    this.allowedRows = [1, 2, 4]; //rows that enemies may appear;
-    this.allowedInitial = [-50, -150, -250]; //initial x point that enemies may appear;
+    this.grid = grid; // Grid to move around
+    this.margin = {x: 30, y: -23}; // Justify enemy image on grid
+    this.allowedRows = [1, 2, 4]; // Rows that enemies may appear;
+    this.allowedInitial = [-100, -200, -300]; //initial x point that enemies may appear;
     this.minSpeed = 1;
     this.maxSpeed = 3;
     this.setRandomPosition();
@@ -65,7 +65,13 @@ Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
-// Parameter: scoreValue, the current score to set the enemy speed and increase the dificult dinamically
+// Set a new random position and speed
+Enemy.prototype.reset = function() {
+    this.setRandomPosition();
+    this.setRandomSpeed();
+}
+
+// Parameter: scoreValue, the current score to set the enemy speed and increase the difficulty dynamically
 Enemy.prototype.getDistancePerTime = function(scoreValue) {
     return this.speed * (100 + (scoreValue * 5));
 };
@@ -90,12 +96,6 @@ Enemy.prototype.setPosition = function(row, initialPoint) {
 // Set a random speed level between minSpeed and maxSpeed;
 Enemy.prototype.setRandomSpeed = function() {
     this.speed = Math.floor(Math.random() * this.maxSpeed) + this.minSpeed;
-}
-
-// Set a new random position and speed
-Enemy.prototype.reset = function() {
-    this.setRandomPosition();
-    this.setRandomSpeed();
 }
 
 // Get grid coordinate for row.
@@ -133,11 +133,11 @@ Enemy.generateEnemies = function(numEnemies, grid) {
 
 // Character you control
 var Player = function(grid) {
-    this.grid = grid;
+    this.grid = grid; // Grid to move around
+    this.dead = false; // Define if you lost
+    this.margin = {x: 0, y: -30}; //justify player image on grid
     this.sprite = 'images/char-boy.png';
-    this.margin = {x: 0, y: -30};
     this.setPosition(2, 6);
-    this.dead = false;
 }
 
 Player.prototype.update = function() {
@@ -146,14 +146,14 @@ Player.prototype.update = function() {
     }
 };
 
-// Return true when the player be in the water
-Player.prototype.isWinner = function() {
-    return this.getPosition().y === 0;
-}
-
 Player.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
+
+Player.prototype.reset = function() {
+    this.dead = false;
+    this.setPosition(2, 6);
+}
 
 Player.prototype.handleInput = function(key) {
     var inputActions = {
@@ -175,13 +175,18 @@ Player.prototype.handleInput = function(key) {
     }
 }
 
-// Move the Player on the row
+// Returns true when goal is achieved
+Player.prototype.isWinner = function() {
+    return this.getPosition().y === 0;
+}
+
+// Move the player on the row
 Player.prototype.moveX = function(distance) {
     var pos = this.getPosition();
     this.setPosition(pos.x + distance, pos.y);
 }
 
-// Move the Player on the column
+// Move the player on the column
 Player.prototype.moveY = function(distance) {
     var pos = this.getPosition();
     this.setPosition(pos.x, pos.y + distance);
@@ -209,12 +214,7 @@ Player.prototype.isValidPosition = function(x, y) {
     return validX && validY;
 }
 
-Player.prototype.reset = function() {
-    this.dead = false;
-    this.setPosition(2, 6);
-}
-
-// Score
+// Score display
 var Score = function() {
     this.curentScore = 0;
     this.highScore = 0;
