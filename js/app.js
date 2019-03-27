@@ -1,5 +1,6 @@
+// Grid to position all entities
 var Grid = function() {
-    this.numRows =  6;
+    this.numRows =  7;
     this.numCols =  5;
     this.rowSize =  83;
     this.colSize =  101;
@@ -7,8 +8,9 @@ var Grid = function() {
         'images/water-block.png',   // Top row is water
         'images/stone-block.png',   // Row 1 of 3 of stone
         'images/stone-block.png',   // Row 2 of 3 of stone
-        'images/stone-block.png',   // Row 3 of 3 of stone
-        'images/grass-block.png',   // Row 1 of 2 of grass
+        'images/grass-block.png',   // Row 3 of 3 of stone
+        'images/stone-block.png',   // Row 1 of 2 of grass
+        'images/grass-block.png',   // Row 2 of 2 of grass
         'images/grass-block.png'    // Row 2 of 2 of grass
     ];
 };
@@ -36,26 +38,24 @@ Grid.prototype.render = function() {
 // Enemies our player must avoid
 var Enemy = function(grid) {
     this.grid = grid;
-    this.margin = {x: 30, y: -23};
-    this.allowedRows = [1, 2, 3];
-    this.allowedInitial = [-50, -150, -250];
+    this.margin = {x: 30, y: -23}; //justify enemy image on grid
+    this.allowedRows = [1, 2, 4]; //rows that enemies may appear;
+    this.allowedInitial = [-50, -150, -250]; //initial x point that enemies may appear;
     this.minSpeed = 1;
-    this.maxSpeed = 4;
+    this.maxSpeed = 3;
     this.setRandomPosition();
     this.setRandomSpeed();
     this.sprite = 'images/enemy-bug.png';
 };
 
-// Update the enemy's position, required method for game
 // Parameter: dt, a time delta between ticks
-Enemy.prototype.update = function(dt) {
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
+Enemy.prototype.update = function(dt, scoreValue) {
     var gridWidth = this.grid.colSize * this.grid.numCols;
     if (this.x <= gridWidth){
-        this.x += this.getDistancePerTime() * dt;
+        // By the dt parameter which will ensure the game runs at the same speed fors all computers.
+        this.x += this.getDistancePerTime(scoreValue) * dt;
     } else {
+        // When gridWidth is reached, the enemy is reset
         this.reset();
     }
 };
@@ -65,10 +65,12 @@ Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
-Enemy.prototype.getDistancePerTime = function() {
-    return this.speed * 100;
+// Parameter: scoreValue, the current score to set the enemy speed and increase the dificult dinamically
+Enemy.prototype.getDistancePerTime = function(scoreValue) {
+    return this.speed * (100 + (scoreValue * 5));
 };
 
+// Define a random position by properties allowedRows and allowedInitial;
 Enemy.prototype.setRandomPosition = function() {
     var randElement = function randElement(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
@@ -78,24 +80,30 @@ Enemy.prototype.setRandomPosition = function() {
     this.setPosition(randomRow, randomInitial);
 }
 
+// Set position by grid coordinates
+// Parameter: row, y grid point. initialPoint, x grid point
 Enemy.prototype.setPosition = function(row, initialPoint) {
     this.x = initialPoint + this.margin.x;
     this.y = this.grid.rowSize * row + this.margin.y;
 }
 
+// Set a random speed level between minSpeed and maxSpeed;
 Enemy.prototype.setRandomSpeed = function() {
     this.speed = Math.floor(Math.random() * this.maxSpeed) + this.minSpeed;
 }
 
+// Set a new random position and speed
 Enemy.prototype.reset = function() {
     this.setRandomPosition();
     this.setRandomSpeed();
 }
 
+// Get grid coordinate for row.
 Enemy.prototype.getRow = function() {
      return (this.y - this.margin.y) / this.grid.rowSize;
 }
 
+// Get column range based on grid coordinate.
 Enemy.prototype.getColRange = function() {
     var xPos = (this.x - this.margin.x) / this.grid.colSize;
     var minPos = Math.round(xPos);
@@ -103,6 +111,8 @@ Enemy.prototype.getColRange = function() {
     return { min: minPos, max: maxPos }
 }
 
+// Returns true if check a Collision with a player
+// Parameter: the Player object;
 Enemy.prototype.checkCollisions = function(player) {
     var playerPosition = player.getPosition();
     var colRange = this.getColRange();
@@ -112,6 +122,7 @@ Enemy.prototype.checkCollisions = function(player) {
     return false;
 }
 
+// Static method that returns a array of new enemies
 Enemy.generateEnemies = function(numEnemies, grid) {
     var arrEnemies = [];
     for(var i = 0; i < numEnemies; i++) {
@@ -120,14 +131,12 @@ Enemy.generateEnemies = function(numEnemies, grid) {
     return arrEnemies;
 }
 
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
+// Character you control
 var Player = function(grid) {
     this.grid = grid;
     this.sprite = 'images/char-boy.png';
     this.margin = {x: 0, y: -30};
-    this.setPosition(2, 5);
+    this.setPosition(2, 6);
     this.dead = false;
 }
 
@@ -137,6 +146,7 @@ Player.prototype.update = function() {
     }
 };
 
+// Return true when the player be in the water
 Player.prototype.isWinner = function() {
     return this.getPosition().y === 0;
 }
@@ -165,16 +175,19 @@ Player.prototype.handleInput = function(key) {
     }
 }
 
+// Move the Player on the row
 Player.prototype.moveX = function(distance) {
     var pos = this.getPosition();
     this.setPosition(pos.x + distance, pos.y);
 }
 
+// Move the Player on the column
 Player.prototype.moveY = function(distance) {
     var pos = this.getPosition();
     this.setPosition(pos.x, pos.y + distance);
 }
 
+// Define the player position by Grid cordinates
 Player.prototype.setPosition = function(x, y) {
     if (this.isValidPosition(x, y)) {
         this.x = this.grid.colSize * x + this.margin.x;
@@ -182,12 +195,14 @@ Player.prototype.setPosition = function(x, y) {
     }
 }
 
+// Get the grid cordinates by current player position
 Player.prototype.getPosition = function() {
     var x = (this.x - this.margin.x) / this.grid.colSize;
     var y = (this.y - this.margin.y) / this.grid.rowSize;
     return { x: x, y: y };
 }
 
+// Returns true if a grid cordinate position is valid
 Player.prototype.isValidPosition = function(x, y) {
     var validX = x >= 0 && x <= this.grid.numCols - 1;
     var validY = y >= 0 && y <= this.grid.numRows - 1;
@@ -196,14 +211,17 @@ Player.prototype.isValidPosition = function(x, y) {
 
 Player.prototype.reset = function() {
     this.dead = false;
-    this.setPosition(2, 5);
+    this.setPosition(2, 6);
 }
 
+// Score
 var Score = function() {
     this.curentScore = 0;
     this.highScore = 0;
 }
 
+// Check player situation for reset or add a point to score
+// Parameter: the player object
 Score.prototype.update = function(player) {
     if (player.dead) {
         this.reset();
@@ -214,17 +232,17 @@ Score.prototype.update = function(player) {
 }
 
 Score.prototype.render = function() {
-    ctx.font = '14pt consolas';
+    ctx.font = '15pt consolas';
     ctx.textAlign = "right";
-    ctx.fillStyle = 'white';
     ctx.fillStyle = 'black';
     ctx.fillText(('0000' + (this.curentScore)).slice(-4), 500, 40);
     if (this.highScore !== 0) {
         ctx.fillStyle = 'grey';
-        ctx.fillText('HI ' + ('0000' + this.highScore).slice(-4), 420, 40);
+        ctx.fillText('HI ' + ('0000' + this.highScore).slice(-4), 400, 40);
     }
 }
 
+// check of a new record and reset the score value
 Score.prototype.reset = function() {
     if(this.curentScore > this.highScore) {
         this.highScore = this.curentScore;
@@ -240,7 +258,7 @@ Score.prototype.addPoint = function() {
 var grid = new Grid();
 var score = new Score();
 var player = new Player(grid);
-var numOfEnemies = 3;
+var numOfEnemies = 4;
 var allEnemies = Enemy.generateEnemies(numOfEnemies, grid);
 
 // This listens for key presses and sends the keys to your Player.

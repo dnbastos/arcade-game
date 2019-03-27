@@ -25,7 +25,7 @@ var Engine = (function(global) {
         lastTime;
 
     canvas.width = 505;
-    canvas.height = 606;
+    canvas.height = 689;
     doc.body.appendChild(canvas);
 
     /* This function serves as the kickoff point for the game loop itself
@@ -92,7 +92,7 @@ var Engine = (function(global) {
     function updateEntities(dt) {
         score.update(player);
         allEnemies.forEach(function(enemy) {
-            enemy.update(dt);
+            enemy.update(dt, score.curentScore);
         });
         player.update();
     }
@@ -114,8 +114,7 @@ var Engine = (function(global) {
     function render() {
         // Before drawing, clear existing canvas
         ctx.clearRect(0,0,canvas.width, canvas.height);
-        score.render();
-        grid.render();
+
         renderEntities();
     }
 
@@ -127,10 +126,11 @@ var Engine = (function(global) {
         /* Loop through all of the objects within the allEnemies array and call
          * the render function you have defined.
          */
+        grid.render();
+        score.render();
         allEnemies.forEach(function(enemy) {
             enemy.render();
         });
-
         player.render();
     }
 
@@ -150,6 +150,7 @@ var Engine = (function(global) {
         'images/stone-block.png',
         'images/water-block.png',
         'images/grass-block.png',
+        'images/rock.png',
         'images/enemy-bug.png',
         'images/char-boy.png'
     ]);
