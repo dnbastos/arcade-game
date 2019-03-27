@@ -90,6 +90,7 @@ var Engine = (function(global) {
      * render methods.
      */
     function updateEntities(dt) {
+        score.update(player);
         allEnemies.forEach(function(enemy) {
             enemy.update(dt);
         });
@@ -113,6 +114,7 @@ var Engine = (function(global) {
     function render() {
         // Before drawing, clear existing canvas
         ctx.clearRect(0,0,canvas.width, canvas.height);
+        score.render();
         grid.render();
         renderEntities();
     }

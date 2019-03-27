@@ -146,19 +146,22 @@ Player.prototype.render = function() {
 };
 
 Player.prototype.handleInput = function(key) {
-    switch(key) {
-        case 'left':
+    var inputActions = {
+        left: function left() {
             this.moveX(-1);
-            break;
-        case 'up':
+        },
+        up: function up() {
             this.moveY(-1);
-            break;
-        case 'right':
+        },
+        right: function right() {
             this.moveX(1);
-            break;
-        case 'down':
+        },
+        down: function down() {
             this.moveY(1);
-            break;
+        }
+    };
+    if (inputActions[key] !== undefined) {
+        inputActions[key].call(this);
     }
 }
 
@@ -196,9 +199,48 @@ Player.prototype.reset = function() {
     this.setPosition(2, 5);
 }
 
+var Score = function() {
+    this.curentScore = 0;
+    this.highScore = 0;
+}
+
+Score.prototype.update = function(player) {
+    if (player.dead) {
+        this.reset();
+    }
+    if (player.isWinner()) {
+        this.addPoint();
+    }
+}
+
+Score.prototype.render = function() {
+    ctx.font = '14pt consolas';
+    ctx.textAlign = "right";
+    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'black';
+    ctx.fillText(('0000' + (this.curentScore)).slice(-4), 500, 40);
+    if (this.highScore !== 0) {
+        ctx.fillStyle = 'grey';
+        ctx.fillText('HI ' + ('0000' + this.highScore).slice(-4), 420, 40);
+    }
+}
+
+Score.prototype.reset = function() {
+    if(this.curentScore > this.highScore) {
+        this.highScore = this.curentScore;
+    }
+    this.curentScore = 0;
+    this.update;
+}
+
+Score.prototype.addPoint = function() {
+    this.curentScore++;
+}
+
 var grid = new Grid();
+var score = new Score();
 var player = new Player(grid);
-var numOfEnemies = 6;
+var numOfEnemies = 3;
 var allEnemies = Enemy.generateEnemies(numOfEnemies, grid);
 
 // This listens for key presses and sends the keys to your Player.
