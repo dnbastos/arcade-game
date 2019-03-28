@@ -100,7 +100,7 @@ var Engine = (function(global) {
     function checkCollisions() {
         allEnemies.forEach(function(enemy) {
             if(enemy.checkCollisions(player)) {
-                player.dead = true;
+                player.isDead = true;
             }
         });
     }

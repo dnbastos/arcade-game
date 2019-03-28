@@ -1,3 +1,4 @@
+'use strict';
 // Grid to position all entities
 var Grid = function() {
     this.numRows =  7;
@@ -33,6 +34,17 @@ Grid.prototype.render = function() {
             ctx.drawImage(Resources.get(this.rowImages[row]), col * this.colSize, row * this.rowSize);
         }
     }
+};
+
+// Characters
+var Character = function() {
+    this.x = 0;
+    this.y = 0;
+}
+
+// Draw the enemy on the screen
+Character.prototype.render = function() {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 }
 
 // Enemies our player must avoid
@@ -48,6 +60,9 @@ var Enemy = function(grid) {
     this.sprite = 'images/enemy-bug.png';
 };
 
+// Enemy derives from Character
+Enemy.prototype = Object.create(Character.prototype);
+
 // Parameter: dt, a time delta between ticks
 Enemy.prototype.update = function(dt, scoreValue) {
     var gridWidth = this.grid.colSize * this.grid.numCols;
@@ -58,11 +73,6 @@ Enemy.prototype.update = function(dt, scoreValue) {
         // When gridWidth is reached, the enemy is reset
         this.reset();
     }
-};
-
-// Draw the enemy on the screen, required method for game
-Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
 // Set a new random position and speed
@@ -134,44 +144,40 @@ Enemy.generateEnemies = function(numEnemies, grid) {
 // Character you control
 var Player = function(grid) {
     this.grid = grid; // Grid to move around
-    this.dead = false; // Define if you lost
+    this.isDead = false; // Define if you lost
     this.margin = {x: 0, y: -30}; //justify player image on grid
     this.sprite = 'images/char-boy.png';
     this.setPosition(2, 6);
 }
 
+// Player derives from Character
+Player.prototype = Object.create(Character.prototype);
+
 Player.prototype.update = function() {
-    if (this.isWinner() || this.dead) {
+    if (this.isWinner() || this.isDead) {
         this.reset();
     }
 };
 
-Player.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
-
 Player.prototype.reset = function() {
-    this.dead = false;
+    this.isDead = false;
     this.setPosition(2, 6);
 }
 
 Player.prototype.handleInput = function(key) {
-    var inputActions = {
-        left: function left() {
+    switch(key) {
+        case 'left':
             this.moveX(-1);
-        },
-        up: function up() {
+            break;
+        case 'up':
             this.moveY(-1);
-        },
-        right: function right() {
+            break;
+        case 'right':
             this.moveX(1);
-        },
-        down: function down() {
+            break;
+        case 'down':
             this.moveY(1);
-        }
-    };
-    if (inputActions[key] !== undefined) {
-        inputActions[key].call(this);
+            break;
     }
 }
 
@@ -223,7 +229,7 @@ var Score = function() {
 // Check player situation for reset or add a point to score
 // Parameter: the player object
 Score.prototype.update = function(player) {
-    if (player.dead) {
+    if (player.isDead) {
         this.reset();
     }
     if (player.isWinner()) {
@@ -242,13 +248,12 @@ Score.prototype.render = function() {
     }
 }
 
-// check of a new record and reset the score value
+// Check of a new record and reset the score value
 Score.prototype.reset = function() {
     if(this.curentScore > this.highScore) {
         this.highScore = this.curentScore;
     }
     this.curentScore = 0;
-    this.update;
 }
 
 Score.prototype.addPoint = function() {
